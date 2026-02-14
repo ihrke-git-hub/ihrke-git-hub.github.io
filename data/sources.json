@@ -1,0 +1,51 @@
+[
+  {
+    "id": "techcrunch",
+    "name": "TechCrunch",
+    "lang": "en",
+    "type": "rss",
+    "url": "https://techcrunch.com/category/artificial-intelligence/feed/"
+  },
+  {
+    "id": "theverge",
+    "name": "The Verge",
+    "lang": "en",
+    "type": "rss",
+    "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+  },
+  {
+    "id": "venturebeat",
+    "name": "VentureBeat",
+    "lang": "en",
+    "type": "rss",
+    "url": "https://venturebeat.com/category/ai/feed/"
+  },
+  {
+    "id": "mit_tech_review",
+    "name": "MIT Technology Review",
+    "lang": "en",
+    "type": "rss",
+    "url": "https://www.technologyreview.com/feed/"
+  },
+  {
+    "id": "ai_news",
+    "name": "AI News",
+    "lang": "en",
+    "type": "rss",
+    "url": "https://www.artificialintelligence-news.com/feed/"
+  },
+  {
+    "id": "itmedia_ai",
+    "name": "ITmedia AI+",
+    "lang": "ja",
+    "type": "rss",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/aiplus.xml"
+  },
+  {
+    "id": "itmedia_news",
+    "name": "ITmedia NEWS AI",
+    "lang": "ja",
+    "type": "rss",
+    "url": "https://rss.itmedia.co.jp/rss/2.0/news_ai.xml"
+  }
+]
