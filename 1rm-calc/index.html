@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1RM Calculator - 推定MAX重量計算</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+                         "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 4px;
+        }
+        .header h1 span {
+            background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        /* Exercise selector */
+        .section-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .body-part-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 2px;
+        }
+        .bp-tab {
+            padding: 7px 14px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #94a3b8;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .bp-tab:hover { background: #334155; color: #e2e8f0; }
+        .bp-tab.active {
+            background: #7c3aed;
+            border-color: #7c3aed;
+            color: #fff;
+        }
+        .exercise-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 6px;
+            margin-bottom: 24px;
+        }
+        .ex-btn {
+            padding: 10px 8px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #cbd5e1;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .ex-btn:hover { background: #334155; border-color: #475569; }
+        .ex-btn.active {
+            background: #4c1d95;
+            border-color: #7c3aed;
+            color: #fff;
+        }
+
+        /* Input area */
+        .input-section {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .selected-exercise {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #c4b5fd;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .input-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            flex: 1;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: #f8fafc;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #7c3aed;
+        }
+        .input-group .unit {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 4px;
+        }
+        .calc-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .calc-btn:hover { opacity: 0.9; }
+        .calc-btn:active { transform: scale(0.98); }
+
+        /* Result */
+        .result-section {
+            display: none;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .result-section.show { display: block; }
+        .result-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        .result-value {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+        .result-unit {
+            font-size: 1rem;
+            color: #94a3b8;
+        }
+        .result-formula {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        /* Percentage table */
+        .pct-table {
+            margin-top: 16px;
+            border-top: 1px solid #334155;
+            padding-top: 16px;
+        }
+        .pct-table h3 {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+        .pct-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 6px;
+        }
+        .pct-item {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        .pct-item .pct {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .pct-item .weight {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .pct-item .reps {
+            font-size: 0.65rem;
+            color: #7c3aed;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.4rem; }
+            .result-value { font-size: 2.4rem; }
+            .input-group input { font-size: 1rem; padding: 10px; }
+            .pct-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span>1RM Calculator</span></h1>
+            <div class="subtitle">推定MAX重量計算ツール</div>
+        </div>
+
+        <div class="section-label">部位を選択</div>
+        <div class="body-part-tabs" id="bpTabs"></div>
+
+        <div class="section-label">種目を選択</div>
+        <div class="exercise-grid" id="exerciseGrid"></div>
+
+        <div class="input-section">
+            <div class="selected-exercise" id="selectedExercise">種目を選択してください</div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="weight">使用重量</label>
+                    <input type="number" id="weight" placeholder="0" min="0" step="0.5">
+                    <div class="unit">kg</div>
+                </div>
+                <div class="input-group">
+                    <label for="reps">回数</label>
+                    <input type="number" id="reps" placeholder="0" min="1" max="30" step="1">
+                    <div class="unit">reps</div>
+                </div>
+            </div>
+            <button class="calc-btn" onclick="calculate()">1RMを計算</button>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="result-label">推定1RM</div>
+            <div class="result-value" id="resultValue">0</div>
+            <div class="result-unit">kg</div>
+            <div class="result-formula" id="resultFormula"></div>
+
+            <div class="pct-table">
+                <h3>重量 × 回数 早見表</h3>
+                <div class="pct-grid" id="pctGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const exercises = {
+        "胸": [
+            "ベンチプレス",
+            "インクラインベンチプレス",
+            "ダンベルプレス",
+            "インクラインダンベルプレス",
+            "ダンベルフライ",
+            "ケーブルクロスオーバー",
+            "チェストプレス(マシン)",
+            "ディップス"
+        ],
+        "背中": [
+            "デッドリフト",
+            "懸垂(チンニング)",
+            "ベントオーバーロウ",
+            "ラットプルダウン",
+            "シーテッドロウ",
+            "ワンハンドダンベルロウ",
+            "Tバーロウ"
+        ],
+        "脚": [
+            "スクワット",
+            "フロントスクワット",
+            "レッグプレス",
+            "レッグエクステンション",
+            "レッグカール",
+            "ブルガリアンスクワット",
+            "ルーマニアンデッドリフト",
+            "カーフレイズ"
+        ],
+        "肩": [
+            "オーバーヘッドプレス",
+            "ダンベルショルダープレス",
+            "サイドレイズ",
+            "フロントレイズ",
+            "リアデルトフライ",
+            "アップライトロウ",
+            "アーノルドプレス"
+        ],
+        "腕": [
+            "バーベルカール",
+            "ダンベルカール",
+            "ハンマーカール",
+            "プリーチャーカール",
+            "トライセプスプレスダウン",
+            "スカルクラッシャー",
+            "フレンチプレス"
+        ]
+    };
+
+    // RM換算テーブル（%1RM → おおよその回数）
+    const rmTable = [
+        { pct: 100, reps: "1" },
+        { pct: 95, reps: "2" },
+        { pct: 90, reps: "3-4" },
+        { pct: 85, reps: "5-6" },
+        { pct: 80, reps: "7-8" },
+        { pct: 75, reps: "9-10" },
+        { pct: 70, reps: "11-12" },
+        { pct: 65, reps: "14-16" },
+        { pct: 60, reps: "18-20" },
+    ];
+
+    let currentPart = "胸";
+    let currentExercise = "";
+
+    // 部位タブ生成
+    function renderBPTabs() {
+        const container = document.getElementById('bpTabs');
+        container.innerHTML = Object.keys(exercises).map(bp =>
+            `<button class="bp-tab${bp === currentPart ? ' active' : ''}" onclick="selectPart('${bp}')">${bp}</button>`
+        ).join('');
+    }
+
+    // 種目ボタン生成
+    function renderExercises() {
+        const container = document.getElementById('exerciseGrid');
+        container.innerHTML = exercises[currentPart].map(ex =>
+            `<button class="ex-btn${ex === currentExercise ? ' active' : ''}" onclick="selectExercise('${ex}')">${ex}</button>`
+        ).join('');
+    }
+
+    function selectPart(bp) {
+        currentPart = bp;
+        currentExercise = "";
+        renderBPTabs();
+        renderExercises();
+    }
+
+    function selectExercise(ex) {
+        currentExercise = ex;
+        document.getElementById('selectedExercise').textContent = ex;
+        renderExercises();
+        document.getElementById('weight').focus();
+    }
+
+    // Epley式: 1RM = w × (1 + r / 30)
+    function epley(w, r) {
+        if (r === 1) return w;
+        return w * (1 + r / 30);
+    }
+
+    // Brzycki式: 1RM = w × 36 / (37 - r)
+    function brzycki(w, r) {
+        if (r === 1) return w;
+        if (r >= 37) return w * 36;
+        return w * 36 / (37 - r);
+    }
+
+    function calculate() {
+        const w = parseFloat(document.getElementById('weight').value);
+        const r = parseInt(document.getElementById('reps').value);
+
+        if (!w || w <= 0 || !r || r <= 0) {
+            alert('重量と回数を入力してください');
+            return;
+        }
+        if (r > 30) {
+            alert('回数は30以下で入力してください');
+            return;
+        }
+
+        const e = epley(w, r);
+        const b = brzycki(w, r);
+        const avg = (e + b) / 2;
+        const result = Math.round(avg * 10) / 10;
+
+        // 2.5kg刻みに丸めた値も表示
+        const rounded = Math.round(result / 2.5) * 2.5;
+
+        document.getElementById('resultValue').textContent = rounded.toFixed(1);
+        document.getElementById('resultFormula').textContent =
+            `Epley式: ${e.toFixed(1)}kg / Brzycki式: ${b.toFixed(1)}kg（平均を2.5kg単位に丸め）`;
+
+        // パーセンテージ早見表
+        const grid = document.getElementById('pctGrid');
+        grid.innerHTML = rmTable.map(row => {
+            const kg = Math.round((rounded * row.pct / 100) / 2.5) * 2.5;
+            return `<div class="pct-item">
+                <div class="pct">${row.pct}%</div>
+                <div class="weight">${kg.toFixed(1)}kg</div>
+                <div class="reps">≈ ${row.reps}回</div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('resultSection').classList.add('show');
+    }
+
+    // Enterキーで計算
+    document.getElementById('weight').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('reps').focus();
+    });
+    document.getElementById('reps').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') calculate();
+    });
+
+    // 初期表示
+    renderBPTabs();
+    renderExercises();
+    </script>
+</body>
+</html>
