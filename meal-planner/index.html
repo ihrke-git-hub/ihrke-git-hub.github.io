@@ -392,15 +392,6 @@
             <div class="subtitle">カテゴリと気分を選んで、献立をおまかせ！</div>
         </div>
 
-        <details class="api-key-section" id="apiKeySection">
-            <summary>⚙️ Gemini APIキー設定</summary>
-            <div class="api-key-inner">
-                <input type="password" id="apiKeyInput" placeholder="AIza...">
-                <button onclick="saveApiKey()">保存</button>
-            </div>
-            <div class="api-key-status" id="apiKeyStatus"></div>
-        </details>
-
         <div class="mode-tabs">
             <button class="mode-tab active" onclick="switchMode('mood')">🎯 気分で選ぶ</button>
             <button class="mode-tab" onclick="switchMode('ingredient')">🥕 食材から考える</button>
@@ -483,6 +474,15 @@
                 <button class="retry-btn" id="retryBtn" onclick="retry()">🔄 もう一回考える</button>
             </div>
         </div>
+
+        <details class="api-key-section" id="apiKeySection" style="margin-top:40px">
+            <summary>⚙️ Gemini APIキー設定</summary>
+            <div class="api-key-inner">
+                <input type="password" id="apiKeyInput" placeholder="AIza...">
+                <button onclick="saveApiKey()">保存</button>
+            </div>
+            <div class="api-key-status" id="apiKeyStatus"></div>
+        </details>
     </div>
 
     <script>
