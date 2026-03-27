@@ -161,17 +161,13 @@
             transform: none;
         }
 
-        /* Result */
-        .result {
+        /* Step sections */
+        .step-section {
             display: none;
-            background: #fff;
-            border: 2px solid #fbbf24;
-            border-radius: 16px;
-            padding: 24px 20px;
             margin-bottom: 20px;
         }
-        .result.show { display: block; }
-        .result-badge {
+        .step-section.show { display: block; }
+        .step-badge {
             display: inline-block;
             background: #fef3c7;
             color: #92400e;
@@ -181,10 +177,54 @@
             border-radius: 20px;
             margin-bottom: 12px;
         }
-        .meal-card {
-            margin-bottom: 16px;
+        .step-hint {
+            font-size: 0.8rem;
+            color: #a8a29e;
+            margin-bottom: 12px;
         }
-        .meal-card:last-child { margin-bottom: 0; }
+
+        /* Candidate cards */
+        .candidate {
+            background: #fff;
+            border: 2px solid #e7e5e4;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .candidate:hover {
+            border-color: #fbbf24;
+            background: #fffbeb;
+            transform: translateY(-1px);
+        }
+        .candidate.selected {
+            border-color: #f59e0b;
+            background: #fef3c7;
+        }
+        .candidate-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1c1917;
+            margin-bottom: 4px;
+        }
+        .candidate-desc {
+            font-size: 0.82rem;
+            color: #57534e;
+            line-height: 1.5;
+        }
+
+        /* Final result */
+        .final-result {
+            display: none;
+            background: #fff;
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            padding: 24px 20px;
+            margin-bottom: 20px;
+        }
+        .final-result.show { display: block; }
+        .meal-card { margin-bottom: 16px; }
         .meal-label {
             font-size: 0.75rem;
             font-weight: 700;
@@ -455,23 +495,44 @@
             <div>🍳 考え中<span class="dots"></span></div>
         </div>
 
-        <div class="result" id="result">
-            <span class="result-badge">🍽️ 今夜の献立</span>
+        <!-- Step 1: メイン候補 -->
+        <div class="step-section" id="step1">
+            <span class="step-badge">🍖 Step 1 : メインを選ぶ</span>
+            <div class="step-hint">気になる料理をタップしてください</div>
+            <div id="mainCandidates"></div>
+            <div style="text-align:center;margin-top:8px">
+                <button class="retry-btn" onclick="retry()">🔄 候補を変える</button>
+            </div>
+        </div>
+
+        <!-- Step 2: 副菜候補 -->
+        <div class="step-section" id="step2">
+            <span class="step-badge">🥬 Step 2 : 副菜を選ぶ</span>
+            <div class="step-hint" id="step2Hint"></div>
+            <div id="sideCandidates"></div>
+            <div style="text-align:center;margin-top:8px">
+                <button class="retry-btn" onclick="backToStep1()">← メインを選び直す</button>
+            </div>
+        </div>
+
+        <!-- Final result -->
+        <div class="final-result" id="finalResult">
+            <span class="step-badge">🍽️ 今夜の献立</span>
             <div class="meal-card">
                 <div class="meal-label">メインディッシュ</div>
-                <div class="meal-name" id="mainName"></div>
-                <div class="meal-desc" id="mainDesc"></div>
-                <div class="recipe-links" id="mainLinks"></div>
+                <div class="meal-name" id="finalMainName"></div>
+                <div class="meal-desc" id="finalMainDesc"></div>
+                <div class="recipe-links" id="finalMainLinks"></div>
             </div>
             <hr class="meal-divider">
             <div class="meal-card">
                 <div class="meal-label">副菜</div>
-                <div class="meal-name" id="sideName"></div>
-                <div class="meal-desc" id="sideDesc"></div>
-                <div class="recipe-links" id="sideLinks"></div>
+                <div class="meal-name" id="finalSideName"></div>
+                <div class="meal-desc" id="finalSideDesc"></div>
+                <div class="recipe-links" id="finalSideLinks"></div>
             </div>
             <div style="text-align:center">
-                <button class="retry-btn" id="retryBtn" onclick="retry()">🔄 もう一回考える</button>
+                <button class="retry-btn" onclick="retry()">🔄 最初からやり直す</button>
             </div>
         </div>
 
@@ -610,6 +671,9 @@
         }
     })();
 
+    let selectedMain = null;
+    let mainCandidatesData = [];
+
     // Recipe search links
     function buildRecipeLinks(dishName) {
         const q = encodeURIComponent(dishName + ' レシピ');
@@ -624,7 +688,13 @@
         ).join('');
     }
 
-    // Shared API call
+    function hideAllSteps() {
+        document.getElementById('step1').classList.remove('show');
+        document.getElementById('step2').classList.remove('show');
+        document.getElementById('finalResult').classList.remove('show');
+    }
+
+    // Shared Gemini API call (returns parsed JSON array)
     async function callGemini(prompt, btn) {
         const apiKey = getApiKey();
         if (!apiKey) {
@@ -635,7 +705,7 @@
 
         btn.disabled = true;
         hideError();
-        document.getElementById('result').classList.remove('show');
+        hideAllSteps();
         document.getElementById('loading').classList.add('show');
 
         try {
@@ -658,20 +728,11 @@
 
             const data = await resp.json();
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const match = text.match(/\{[\s\S]*\}/);
-            if (!match) throw new Error('献立を生成できませんでした。もう一度お試しください。');
-
-            const meal = JSON.parse(match[0]);
-            document.getElementById('mainName').textContent = meal.main_name;
-            document.getElementById('mainDesc').textContent = meal.main_desc;
-            document.getElementById('mainLinks').innerHTML = buildRecipeLinks(meal.main_name);
-            document.getElementById('sideName').textContent = meal.side_name;
-            document.getElementById('sideDesc').textContent = meal.side_desc;
-            document.getElementById('sideLinks').innerHTML = buildRecipeLinks(meal.side_name);
+            const match = text.match(/\[[\s\S]*\]/);
+            if (!match) throw new Error('候補を生成できませんでした。もう一度お試しください。');
 
             document.getElementById('loading').classList.remove('show');
-            document.getElementById('result').classList.add('show');
-            return meal;
+            return JSON.parse(match[0]);
         } catch (e) {
             document.getElementById('loading').classList.remove('show');
             showError(e.message);
@@ -681,66 +742,154 @@
         }
     }
 
-    // Mode 1: 気分で選ぶ
-    async function generate() {
-        if (!selectedCategory) { showError('カテゴリを選択してください'); return; }
-        if (!selectedMood) { showError('気分を選択してください'); return; }
+    // Render candidate cards
+    function renderCandidates(containerId, items, onSelect) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = items.map((item, i) =>
+            `<div class="candidate" id="${containerId}_${i}" onclick="(${onSelect.name})(${i})">
+                <div class="candidate-name">${escapeHTML(item.name)}</div>
+                <div class="candidate-desc">${escapeHTML(item.desc)}</div>
+            </div>`
+        ).join('');
+    }
 
-        const catLabel = categories.find(c => c.id === selectedCategory).label;
-        const moodLabel = moods.find(m => m.id === selectedMood).label;
-        const extra = document.getElementById('extraInput').value.trim();
+    // ── Step 1: メイン候補を取得 ──
 
-        const prompt = `あなたは家庭料理の献立アドバイザーです。
-以下の条件で、今夜の夕食の献立を1つ提案してください。
+    function buildMainPrompt() {
+        if (currentMode === 'mood') {
+            const catLabel = categories.find(c => c.id === selectedCategory).label;
+            const moodLabel = moods.find(m => m.id === selectedMood).label;
+            const extra = document.getElementById('extraInput').value.trim();
+            return `あなたは家庭料理の献立アドバイザーです。
+以下の条件で、夕食のメインディッシュ候補を3つ提案してください。
 
 カテゴリ: ${catLabel}
 気分: ${moodLabel}${extra ? '\nリクエスト: ' + extra : ''}
 
-以下のJSON形式のみで回答してください。説明やマークダウンは不要です:
-{
-  "main_name": "メイン料理名",
-  "main_desc": "メイン料理の簡単な説明（材料や調理のポイントを1-2文で）",
-  "side_name": "副菜名",
-  "side_desc": "副菜の簡単な説明（1文で）"
-}`;
-
-        await callGemini(prompt, document.getElementById('generateBtn'));
-    }
-
-    // Mode 2: 食材から考える
-    async function generateFromIngredients() {
-        if (ingredients.length === 0) {
-            showError('食材を1つ以上追加してください');
-            return;
-        }
-
-        const ingList = ingredients.join('、');
-        const styleLabel = selectedCookStyle
-            ? cookStyles.find(s => s.id === selectedCookStyle)?.label || ''
-            : '';
-        const extra = document.getElementById('extraInput2').value.trim();
-
-        const prompt = `あなたは家庭料理の献立アドバイザーです。
-以下の手持ち食材を使って、今夜の夕食の献立を1つ提案してください。
+以下のJSON配列形式のみで回答してください。説明やマークダウンは不要です:
+[
+  {"name": "料理名1", "desc": "簡単な説明（材料や調理のポイントを1-2文で）"},
+  {"name": "料理名2", "desc": "簡単な説明"},
+  {"name": "料理名3", "desc": "簡単な説明"}
+]`;
+        } else {
+            const ingList = ingredients.join('、');
+            const styleLabel = selectedCookStyle
+                ? cookStyles.find(s => s.id === selectedCookStyle)?.label || ''
+                : '';
+            const extra = document.getElementById('extraInput2').value.trim();
+            return `あなたは家庭料理の献立アドバイザーです。
+以下の手持ち食材を使って、夕食のメインディッシュ候補を3つ提案してください。
 すべての食材を無理に使う必要はありませんが、できるだけ活用してください。
 
 手持ち食材: ${ingList}${styleLabel && styleLabel !== 'おまかせ' ? '\n調理スタイル: ' + styleLabel : ''}${extra ? '\nリクエスト: ' + extra : ''}
 
-以下のJSON形式のみで回答してください。説明やマークダウンは不要です:
-{
-  "main_name": "メイン料理名",
-  "main_desc": "メイン料理の簡単な説明（使う食材と調理のポイントを1-2文で）",
-  "side_name": "副菜名",
-  "side_desc": "副菜の簡単な説明（1文で）"
-}`;
-
-        await callGemini(prompt, document.getElementById('generateBtn2'));
+以下のJSON配列形式のみで回答してください。説明やマークダウンは不要です:
+[
+  {"name": "料理名1", "desc": "簡単な説明（使う食材と調理のポイントを1-2文で）"},
+  {"name": "料理名2", "desc": "簡単な説明"},
+  {"name": "料理名3", "desc": "簡単な説明"}
+]`;
+        }
     }
 
-    // Retry dispatches to correct mode
+    async function generate() {
+        if (currentMode === 'mood') {
+            if (!selectedCategory) { showError('カテゴリを選択してください'); return; }
+            if (!selectedMood) { showError('気分を選択してください'); return; }
+        } else {
+            if (ingredients.length === 0) { showError('食材を1つ以上追加してください'); return; }
+        }
+
+        const btn = currentMode === 'mood'
+            ? document.getElementById('generateBtn')
+            : document.getElementById('generateBtn2');
+        const prompt = buildMainPrompt();
+        const result = await callGemini(prompt, btn);
+        if (!result) return;
+
+        mainCandidatesData = result;
+        selectedMain = null;
+        renderCandidates('mainCandidates', result, selectMain);
+        document.getElementById('step1').classList.add('show');
+    }
+
+    function generateFromIngredients() { generate(); }
+
+    // ── Step 2: メイン選択 → 副菜候補を取得 ──
+
+    async function selectMain(idx) {
+        selectedMain = mainCandidatesData[idx];
+
+        // Highlight selected
+        document.querySelectorAll('#mainCandidates .candidate').forEach((el, i) =>
+            el.classList.toggle('selected', i === idx));
+
+        const btn = currentMode === 'mood'
+            ? document.getElementById('generateBtn')
+            : document.getElementById('generateBtn2');
+
+        const prompt = `あなたは家庭料理の献立アドバイザーです。
+メインディッシュが「${selectedMain.name}」に決まりました。
+このメインに合う副菜を3つ提案してください。
+
+以下のJSON配列形式のみで回答してください。説明やマークダウンは不要です:
+[
+  {"name": "副菜名1", "desc": "簡単な説明（1文で）"},
+  {"name": "副菜名2", "desc": "簡単な説明"},
+  {"name": "副菜名3", "desc": "簡単な説明"}
+]`;
+
+        document.getElementById('step1').classList.remove('show');
+        const result = await callGemini(prompt, btn);
+        if (!result) {
+            document.getElementById('step1').classList.add('show');
+            return;
+        }
+
+        renderCandidates('sideCandidates', result, selectSide);
+        document.getElementById('step2Hint').textContent =
+            `「${selectedMain.name}」に合う副菜を選んでください`;
+        document.getElementById('step2').classList.add('show');
+    }
+
+    // ── Step 3: 副菜選択 → 最終結果表示 ──
+
+    function selectSide(idx) {
+        const sides = document.querySelectorAll('#sideCandidates .candidate');
+        const sideData = JSON.parse(
+            '[' + Array.from(sides).map((el) => {
+                const name = el.querySelector('.candidate-name').textContent;
+                const desc = el.querySelector('.candidate-desc').textContent;
+                return JSON.stringify({name, desc});
+            }).join(',') + ']'
+        );
+        const side = sideData[idx];
+
+        // Highlight
+        sides.forEach((el, i) => el.classList.toggle('selected', i === idx));
+
+        // Show final
+        hideAllSteps();
+        document.getElementById('finalMainName').textContent = selectedMain.name;
+        document.getElementById('finalMainDesc').textContent = selectedMain.desc;
+        document.getElementById('finalMainLinks').innerHTML = buildRecipeLinks(selectedMain.name);
+        document.getElementById('finalSideName').textContent = side.name;
+        document.getElementById('finalSideDesc').textContent = side.desc;
+        document.getElementById('finalSideLinks').innerHTML = buildRecipeLinks(side.name);
+        document.getElementById('finalResult').classList.add('show');
+    }
+
+    // Navigation
+    function backToStep1() {
+        hideAllSteps();
+        renderCandidates('mainCandidates', mainCandidatesData, selectMain);
+        document.getElementById('step1').classList.add('show');
+    }
+
     function retry() {
-        if (currentMode === 'mood') generate();
-        else generateFromIngredients();
+        hideAllSteps();
+        generate();
     }
 
     function showError(msg) {
