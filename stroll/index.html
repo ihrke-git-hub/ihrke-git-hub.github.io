@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>散歩の消費カロリー計算</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f6f3;
+            border-left: 5px solid #1abc9c;
+            border-radius: 4px;
+            display: none;
+        }
+        .result.active {
+            display: block;
+        }
+        .result p {
+            margin: 0;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .result span {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1abc9c;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🚶‍♂️ 消費カロリー計算</h1>
+    
+    <div class="form-group">
+        <label for="weight">体重 (kg)</label>
+        <input type="number" id="weight" value="60" min="1" step="0.1">
+    </div>
+
+    <div class="form-group">
+        <label>入力方法</label>
+        <div class="radio-group">
+            <label><input type="radio" name="calc-type" value="distance" checked> 距離 (km)</label>
+            <label><input type="radio" name="calc-type" value="time"> 時間 (分)</label>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label id="input-label" for="input-value">距離 (km)</label>
+        <input type="number" id="input-value" placeholder="例: 3" min="0" step="0.1">
+    </div>
+
+    <button onclick="calculateCalories()">計算する</button>
+
+    <div class="result" id="result-box">
+        <p>消費カロリー: <br><span id="calories">0</span> kcal</p>
+    </div>
+</div>
+
+<script>
+    // ラジオボタンの切り替えでラベルを変更
+    const radios = document.querySelectorAll('input[name="calc-type"]');
+    const inputLabel = document.getElementById('input-label');
+    const inputValue = document.getElementById('input-value');
+
+    radios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'distance') {
+                inputLabel.textContent = '距離 (km)';
+                inputValue.placeholder = '例: 3';
+            } else {
+                inputLabel.textContent = '時間 (分)';
+                inputValue.placeholder = '例: 30';
+            }
+            inputValue.value = ''; // 入力値をリセット
+        });
+    });
+
+    function calculateCalories() {
+        const weight = parseFloat(document.getElementById('weight').value);
+        const type = document.querySelector('input[name="calc-type"]:checked').value;
+        const value = parseFloat(document.getElementById('input-value').value);
+        const resultBox = document.getElementById('result-box');
+        const caloriesDisplay = document.getElementById('calories');
+
+        if (!weight || !value || value <= 0) {
+            alert('正しい数値を入力してください。');
+            return;
+        }
+
+        // 通常歩行のMETs値を3.0とする
+        const METs = 3.0;
+        let hours = 0;
+
+        if (type === 'distance') {
+            // 時速4kmで歩いたと仮定して時間を算出: 時間 = 距離 / 4
+            hours = value / 4.0;
+        } else if (type === 'time') {
+            // 分を時間に変換: 時間 = 分 / 60
+            hours = value / 60.0;
+        }
+
+        // 消費カロリー(kcal) ＝ METs × 体重(kg) × 運動時間(時間) × 1.05
+        const calories = METs * weight * hours * 1.05;
+
+        // 小数点第1位で四捨五入して表示
+        caloriesDisplay.textContent = Math.round(calories * 10) / 10;
+        resultBox.classList.add('active');
+    }
+</script>
+
+</body>
+</html>
