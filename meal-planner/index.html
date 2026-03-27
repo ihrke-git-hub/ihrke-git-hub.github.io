@@ -259,6 +259,98 @@
         }
         .error.show { display: block; }
 
+        /* Mode tabs */
+        .mode-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            background: #e7e5e4;
+            border-radius: 12px;
+            padding: 3px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            color: #78716c;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-tab.active {
+            background: #fff;
+            color: #92400e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .mode-panel { display: none; }
+        .mode-panel.active { display: block; }
+
+        /* Ingredient tags */
+        .ingredient-input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .ingredient-input-row input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #d6d3d1;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            background: #fff;
+            color: #1c1917;
+            outline: none;
+        }
+        .ingredient-input-row input:focus { border-color: #f59e0b; }
+        .ingredient-input-row input::placeholder { color: #a8a29e; }
+        .add-ingredient-btn {
+            padding: 10px 16px;
+            background: #f59e0b;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .add-ingredient-btn:hover { background: #d97706; }
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 32px;
+            margin-bottom: 14px;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #92400e;
+            font-weight: 600;
+        }
+        .tag-remove {
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            color: #d97706;
+            margin-left: 2px;
+        }
+        .tag-remove:hover { color: #b45309; }
+        .tag-hint {
+            font-size: 0.75rem;
+            color: #a8a29e;
+            margin-bottom: 14px;
+        }
+
         @media (max-width: 400px) {
             .option-grid { grid-template-columns: repeat(3, 1fr); }
             .header h1 { font-size: 1.3rem; }
@@ -282,25 +374,62 @@
             <div class="api-key-status" id="apiKeyStatus"></div>
         </details>
 
-        <div class="section">
-            <div class="section-title">🍖 カテゴリ</div>
-            <div class="option-grid" id="categoryGrid"></div>
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="switchMode('mood')">🎯 気分で選ぶ</button>
+            <button class="mode-tab" onclick="switchMode('ingredient')">🥕 食材から考える</button>
         </div>
 
-        <div class="section">
-            <div class="section-title">😋 今日の気分</div>
-            <div class="option-grid" id="moodGrid"></div>
+        <!-- モード1: 気分で選ぶ -->
+        <div class="mode-panel active" id="moodPanel">
+            <div class="section">
+                <div class="section-title">🍖 カテゴリ</div>
+                <div class="option-grid" id="categoryGrid"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">😋 今日の気分</div>
+                <div class="option-grid" id="moodGrid"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📝 リクエスト（任意）</div>
+                <textarea class="extra-input" id="extraInput" rows="2"
+                    placeholder="例: 冷蔵庫に鶏肉とキャベツがある、辛いのNG..."></textarea>
+            </div>
+
+            <button class="generate-btn" id="generateBtn" onclick="generate()">
+                🔮 献立を考える！
+            </button>
         </div>
 
-        <div class="section">
-            <div class="section-title">📝 リクエスト（任意）</div>
-            <textarea class="extra-input" id="extraInput" rows="2"
-                placeholder="例: 冷蔵庫に鶏肉とキャベツがある、辛いのNG..."></textarea>
-        </div>
+        <!-- モード2: 食材から考える -->
+        <div class="mode-panel" id="ingredientPanel">
+            <div class="section">
+                <div class="section-title">🥕 手持ちの食材を入力</div>
+                <div class="ingredient-input-row">
+                    <input type="text" id="ingredientInput" placeholder="例: 鶏もも肉"
+                        onkeydown="if(event.key==='Enter')addIngredient()">
+                    <button class="add-ingredient-btn" onclick="addIngredient()">追加</button>
+                </div>
+                <div class="tag-list" id="tagList"></div>
+                <div class="tag-hint">💡 食材を入力して追加ボタン（またはEnter）で追加してください</div>
+            </div>
 
-        <button class="generate-btn" id="generateBtn" onclick="generate()">
-            🔮 献立を考える！
-        </button>
+            <div class="section">
+                <div class="section-title">🍳 調理スタイル（任意）</div>
+                <div class="option-grid" id="cookStyleGrid"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📝 その他リクエスト（任意）</div>
+                <textarea class="extra-input" id="extraInput2" rows="2"
+                    placeholder="例: 子どもが食べやすいもの、20分以内で作りたい..."></textarea>
+            </div>
+
+            <button class="generate-btn" id="generateBtn2" onclick="generateFromIngredients()">
+                🔮 食材から献立を考える！
+            </button>
+        </div>
 
         <div class="error" id="errorMsg"></div>
 
@@ -322,7 +451,7 @@
                 <div class="meal-desc" id="sideDesc"></div>
             </div>
             <div style="text-align:center">
-                <button class="retry-btn" onclick="generate()">🔄 もう一回考える</button>
+                <button class="retry-btn" id="retryBtn" onclick="retry()">🔄 もう一回考える</button>
             </div>
         </div>
     </div>
@@ -348,8 +477,20 @@
         { id: "healthy", label: "ヘルシー", icon: "🥗" },
     ];
 
+    const cookStyles = [
+        { id: "stir_fry", label: "炒め物", icon: "🍳" },
+        { id: "stew", label: "煮込み", icon: "🍲" },
+        { id: "grill", label: "焼き物", icon: "🔥" },
+        { id: "steam", label: "蒸し物", icon: "♨️" },
+        { id: "raw", label: "生・サラダ", icon: "🥗" },
+        { id: "any_style", label: "おまかせ", icon: "🎲" },
+    ];
+
     let selectedCategory = null;
     let selectedMood = null;
+    let selectedCookStyle = null;
+    let ingredients = [];
+    let currentMode = 'mood';
 
     function renderOptions(items, containerId, type) {
         const container = document.getElementById(containerId);
@@ -365,11 +506,55 @@
             selectedCategory = id;
             document.querySelectorAll('#categoryGrid .option-btn').forEach(b =>
                 b.classList.toggle('selected', b.dataset.id === id));
-        } else {
+        } else if (type === 'mood') {
             selectedMood = id;
             document.querySelectorAll('#moodGrid .option-btn').forEach(b =>
                 b.classList.toggle('selected', b.dataset.id === id));
+        } else if (type === 'cookStyle') {
+            selectedCookStyle = id;
+            document.querySelectorAll('#cookStyleGrid .option-btn').forEach(b =>
+                b.classList.toggle('selected', b.dataset.id === id));
         }
+    }
+
+    // Mode switching
+    function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+        if (mode === 'mood') {
+            document.querySelector('.mode-tab:first-child').classList.add('active');
+            document.getElementById('moodPanel').classList.add('active');
+        } else {
+            document.querySelector('.mode-tab:last-child').classList.add('active');
+            document.getElementById('ingredientPanel').classList.add('active');
+        }
+        hideError();
+        document.getElementById('result').classList.remove('show');
+    }
+
+    // Ingredient tag management
+    function addIngredient() {
+        const input = document.getElementById('ingredientInput');
+        const val = input.value.trim();
+        if (!val) return;
+        if (ingredients.includes(val)) { input.value = ''; return; }
+        ingredients.push(val);
+        renderTags();
+        input.value = '';
+        input.focus();
+    }
+
+    function removeIngredient(idx) {
+        ingredients.splice(idx, 1);
+        renderTags();
+    }
+
+    function renderTags() {
+        const list = document.getElementById('tagList');
+        list.innerHTML = ingredients.map((ing, i) =>
+            `<span class="tag">${ing}<span class="tag-remove" onclick="removeIngredient(${i})">×</span></span>`
+        ).join('');
     }
 
     // API Key management
@@ -386,52 +571,25 @@
         return localStorage.getItem('gemini_api_key');
     }
 
-    // Init: check API key
     (function() {
         if (getApiKey()) {
             document.getElementById('apiKeyStatus').textContent = '✓ 設定済み';
         }
     })();
 
-    async function generate() {
+    // Shared API call
+    async function callGemini(prompt, btn) {
         const apiKey = getApiKey();
         if (!apiKey) {
             document.getElementById('apiKeySection').open = true;
             showError('APIキーを設定してください（Google AI Studioで無料取得できます）');
-            return;
-        }
-        if (!selectedCategory) {
-            showError('カテゴリを選択してください');
-            return;
-        }
-        if (!selectedMood) {
-            showError('気分を選択してください');
-            return;
+            return null;
         }
 
-        const catLabel = categories.find(c => c.id === selectedCategory).label;
-        const moodLabel = moods.find(m => m.id === selectedMood).label;
-        const extra = document.getElementById('extraInput').value.trim();
-
-        const btn = document.getElementById('generateBtn');
         btn.disabled = true;
         hideError();
         document.getElementById('result').classList.remove('show');
         document.getElementById('loading').classList.add('show');
-
-        const prompt = `あなたは家庭料理の献立アドバイザーです。
-以下の条件で、今夜の夕食の献立を1つ提案してください。
-
-カテゴリ: ${catLabel}
-気分: ${moodLabel}${extra ? '\nリクエスト: ' + extra : ''}
-
-以下のJSON形式のみで回答してください。説明やマークダウンは不要です:
-{
-  "main_name": "メイン料理名",
-  "main_desc": "メイン料理の簡単な説明（材料や調理のポイントを1-2文で）",
-  "side_name": "副菜名",
-  "side_desc": "副菜の簡単な説明（1文で）"
-}`;
 
         try {
             const resp = await fetch(
@@ -453,13 +611,10 @@
 
             const data = await resp.json();
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-            // JSONを抽出
             const match = text.match(/\{[\s\S]*\}/);
             if (!match) throw new Error('献立を生成できませんでした。もう一度お試しください。');
 
             const meal = JSON.parse(match[0]);
-
             document.getElementById('mainName').textContent = meal.main_name;
             document.getElementById('mainDesc').textContent = meal.main_desc;
             document.getElementById('sideName').textContent = meal.side_name;
@@ -467,12 +622,76 @@
 
             document.getElementById('loading').classList.remove('show');
             document.getElementById('result').classList.add('show');
+            return meal;
         } catch (e) {
             document.getElementById('loading').classList.remove('show');
             showError(e.message);
+            return null;
         } finally {
             btn.disabled = false;
         }
+    }
+
+    // Mode 1: 気分で選ぶ
+    async function generate() {
+        if (!selectedCategory) { showError('カテゴリを選択してください'); return; }
+        if (!selectedMood) { showError('気分を選択してください'); return; }
+
+        const catLabel = categories.find(c => c.id === selectedCategory).label;
+        const moodLabel = moods.find(m => m.id === selectedMood).label;
+        const extra = document.getElementById('extraInput').value.trim();
+
+        const prompt = `あなたは家庭料理の献立アドバイザーです。
+以下の条件で、今夜の夕食の献立を1つ提案してください。
+
+カテゴリ: ${catLabel}
+気分: ${moodLabel}${extra ? '\nリクエスト: ' + extra : ''}
+
+以下のJSON形式のみで回答してください。説明やマークダウンは不要です:
+{
+  "main_name": "メイン料理名",
+  "main_desc": "メイン料理の簡単な説明（材料や調理のポイントを1-2文で）",
+  "side_name": "副菜名",
+  "side_desc": "副菜の簡単な説明（1文で）"
+}`;
+
+        await callGemini(prompt, document.getElementById('generateBtn'));
+    }
+
+    // Mode 2: 食材から考える
+    async function generateFromIngredients() {
+        if (ingredients.length === 0) {
+            showError('食材を1つ以上追加してください');
+            return;
+        }
+
+        const ingList = ingredients.join('、');
+        const styleLabel = selectedCookStyle
+            ? cookStyles.find(s => s.id === selectedCookStyle)?.label || ''
+            : '';
+        const extra = document.getElementById('extraInput2').value.trim();
+
+        const prompt = `あなたは家庭料理の献立アドバイザーです。
+以下の手持ち食材を使って、今夜の夕食の献立を1つ提案してください。
+すべての食材を無理に使う必要はありませんが、できるだけ活用してください。
+
+手持ち食材: ${ingList}${styleLabel && styleLabel !== 'おまかせ' ? '\n調理スタイル: ' + styleLabel : ''}${extra ? '\nリクエスト: ' + extra : ''}
+
+以下のJSON形式のみで回答してください。説明やマークダウンは不要です:
+{
+  "main_name": "メイン料理名",
+  "main_desc": "メイン料理の簡単な説明（使う食材と調理のポイントを1-2文で）",
+  "side_name": "副菜名",
+  "side_desc": "副菜の簡単な説明（1文で）"
+}`;
+
+        await callGemini(prompt, document.getElementById('generateBtn2'));
+    }
+
+    // Retry dispatches to correct mode
+    function retry() {
+        if (currentMode === 'mood') generate();
+        else generateFromIngredients();
     }
 
     function showError(msg) {
@@ -487,6 +706,7 @@
     // Render
     renderOptions(categories, 'categoryGrid', 'category');
     renderOptions(moods, 'moodGrid', 'mood');
+    renderOptions(cookStyles, 'cookStyleGrid', 'cookStyle');
     </script>
 </body>
 </html>
