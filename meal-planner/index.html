@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今夜なに食べる？ - 献立プランナー</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+                         "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            background: #fefce8;
+            color: #1c1917;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header .emoji { font-size: 2.4rem; margin-bottom: 4px; }
+        .header h1 {
+            font-size: 1.6rem;
+            color: #92400e;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: #a8a29e;
+            margin-top: 2px;
+        }
+
+        /* API key */
+        .api-key-section {
+            background: #fff;
+            border: 1px solid #e7e5e4;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+        .api-key-section summary {
+            font-size: 0.8rem;
+            color: #78716c;
+            cursor: pointer;
+            user-select: none;
+        }
+        .api-key-section summary:hover { color: #44403c; }
+        .api-key-inner {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        .api-key-inner input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d6d3d1;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: #fafaf9;
+            color: #1c1917;
+            outline: none;
+        }
+        .api-key-inner input:focus { border-color: #f59e0b; }
+        .api-key-inner button {
+            padding: 8px 14px;
+            background: #f59e0b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .api-key-inner button:hover { background: #d97706; }
+        .api-key-status {
+            font-size: 0.75rem;
+            margin-top: 6px;
+            color: #16a34a;
+        }
+
+        /* Selection cards */
+        .section { margin-bottom: 22px; }
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #78716c;
+            margin-bottom: 10px;
+            letter-spacing: 0.03em;
+        }
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+        .option-btn {
+            padding: 12px 8px;
+            border: 2px solid #e7e5e4;
+            background: #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            color: #44403c;
+        }
+        .option-btn:hover {
+            border-color: #fbbf24;
+            background: #fffbeb;
+        }
+        .option-btn.selected {
+            border-color: #f59e0b;
+            background: #fef3c7;
+            color: #92400e;
+            font-weight: 700;
+        }
+        .option-btn .icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Additional input */
+        .extra-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d6d3d1;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            background: #fff;
+            color: #1c1917;
+            outline: none;
+            resize: none;
+        }
+        .extra-input:focus { border-color: #f59e0b; }
+        .extra-input::placeholder { color: #a8a29e; }
+
+        /* Generate button */
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            margin-bottom: 20px;
+        }
+        .generate-btn:hover { opacity: 0.9; }
+        .generate-btn:active { transform: scale(0.98); }
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Result */
+        .result {
+            display: none;
+            background: #fff;
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            padding: 24px 20px;
+            margin-bottom: 20px;
+        }
+        .result.show { display: block; }
+        .result-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+        .meal-card {
+            margin-bottom: 16px;
+        }
+        .meal-card:last-child { margin-bottom: 0; }
+        .meal-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #a8a29e;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .meal-name {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #1c1917;
+            margin-bottom: 4px;
+        }
+        .meal-desc {
+            font-size: 0.85rem;
+            color: #57534e;
+            line-height: 1.6;
+        }
+        .meal-divider {
+            border: none;
+            border-top: 1px dashed #e7e5e4;
+            margin: 14px 0;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px 0;
+            color: #a8a29e;
+            font-size: 0.9rem;
+        }
+        .loading.show { display: block; }
+        .loading .dots::after {
+            content: '';
+            animation: dots 1.2s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%   { content: ''; }
+            25%  { content: '.'; }
+            50%  { content: '..'; }
+            75%  { content: '...'; }
+        }
+
+        /* Retry */
+        .retry-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 20px;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .retry-btn:hover { background: #fde68a; }
+
+        /* Error */
+        .error {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #991b1b;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+        .error.show { display: block; }
+
+        @media (max-width: 400px) {
+            .option-grid { grid-template-columns: repeat(3, 1fr); }
+            .header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">🍽️</div>
+            <h1>今夜なに食べる？</h1>
+            <div class="subtitle">カテゴリと気分を選んで、献立をおまかせ！</div>
+        </div>
+
+        <details class="api-key-section" id="apiKeySection">
+            <summary>⚙️ Gemini APIキー設定</summary>
+            <div class="api-key-inner">
+                <input type="password" id="apiKeyInput" placeholder="AIza...">
+                <button onclick="saveApiKey()">保存</button>
+            </div>
+            <div class="api-key-status" id="apiKeyStatus"></div>
+        </details>
+
+        <div class="section">
+            <div class="section-title">🍖 カテゴリ</div>
+            <div class="option-grid" id="categoryGrid"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">😋 今日の気分</div>
+            <div class="option-grid" id="moodGrid"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📝 リクエスト（任意）</div>
+            <textarea class="extra-input" id="extraInput" rows="2"
+                placeholder="例: 冷蔵庫に鶏肉とキャベツがある、辛いのNG..."></textarea>
+        </div>
+
+        <button class="generate-btn" id="generateBtn" onclick="generate()">
+            🔮 献立を考える！
+        </button>
+
+        <div class="error" id="errorMsg"></div>
+
+        <div class="loading" id="loading">
+            <div>🍳 考え中<span class="dots"></span></div>
+        </div>
+
+        <div class="result" id="result">
+            <span class="result-badge">🍽️ 今夜の献立</span>
+            <div class="meal-card">
+                <div class="meal-label">メインディッシュ</div>
+                <div class="meal-name" id="mainName"></div>
+                <div class="meal-desc" id="mainDesc"></div>
+            </div>
+            <hr class="meal-divider">
+            <div class="meal-card">
+                <div class="meal-label">副菜</div>
+                <div class="meal-name" id="sideName"></div>
+                <div class="meal-desc" id="sideDesc"></div>
+            </div>
+            <div style="text-align:center">
+                <button class="retry-btn" onclick="generate()">🔄 もう一回考える</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const categories = [
+        { id: "japanese", label: "和食", icon: "🍱" },
+        { id: "western", label: "洋食", icon: "🥩" },
+        { id: "chinese", label: "中華", icon: "🥟" },
+        { id: "italian", label: "イタリアン", icon: "🍝" },
+        { id: "korean", label: "韓国料理", icon: "🌶️" },
+        { id: "asian", label: "アジアン", icon: "🍜" },
+        { id: "fish", label: "魚介", icon: "🐟" },
+        { id: "any", label: "おまかせ", icon: "🎲" },
+    ];
+
+    const moods = [
+        { id: "hearty", label: "がっつり", icon: "💪" },
+        { id: "light", label: "さっぱり", icon: "🌿" },
+        { id: "comfort", label: "ほっこり", icon: "☺️" },
+        { id: "spicy", label: "刺激的", icon: "🔥" },
+        { id: "quick", label: "時短", icon: "⏱️" },
+        { id: "healthy", label: "ヘルシー", icon: "🥗" },
+    ];
+
+    let selectedCategory = null;
+    let selectedMood = null;
+
+    function renderOptions(items, containerId, type) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = items.map(item =>
+            `<button class="option-btn" data-id="${item.id}" onclick="selectOption('${type}','${item.id}')">
+                <span class="icon">${item.icon}</span>${item.label}
+            </button>`
+        ).join('');
+    }
+
+    function selectOption(type, id) {
+        if (type === 'category') {
+            selectedCategory = id;
+            document.querySelectorAll('#categoryGrid .option-btn').forEach(b =>
+                b.classList.toggle('selected', b.dataset.id === id));
+        } else {
+            selectedMood = id;
+            document.querySelectorAll('#moodGrid .option-btn').forEach(b =>
+                b.classList.toggle('selected', b.dataset.id === id));
+        }
+    }
+
+    // API Key management
+    function saveApiKey() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if (!key) return;
+        localStorage.setItem('gemini_api_key', key);
+        document.getElementById('apiKeyStatus').textContent = '✓ 保存しました';
+        document.getElementById('apiKeyInput').value = '';
+        document.getElementById('apiKeySection').open = false;
+    }
+
+    function getApiKey() {
+        return localStorage.getItem('gemini_api_key');
+    }
+
+    // Init: check API key
+    (function() {
+        if (getApiKey()) {
+            document.getElementById('apiKeyStatus').textContent = '✓ 設定済み';
+        }
+    })();
+
+    async function generate() {
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            document.getElementById('apiKeySection').open = true;
+            showError('APIキーを設定してください（Google AI Studioで無料取得できます）');
+            return;
+        }
+        if (!selectedCategory) {
+            showError('カテゴリを選択してください');
+            return;
+        }
+        if (!selectedMood) {
+            showError('気分を選択してください');
+            return;
+        }
+
+        const catLabel = categories.find(c => c.id === selectedCategory).label;
+        const moodLabel = moods.find(m => m.id === selectedMood).label;
+        const extra = document.getElementById('extraInput').value.trim();
+
+        const btn = document.getElementById('generateBtn');
+        btn.disabled = true;
+        hideError();
+        document.getElementById('result').classList.remove('show');
+        document.getElementById('loading').classList.add('show');
+
+        const prompt = `あなたは家庭料理の献立アドバイザーです。
+以下の条件で、今夜の夕食の献立を1つ提案してください。
+
+カテゴリ: ${catLabel}
+気分: ${moodLabel}${extra ? '\nリクエスト: ' + extra : ''}
+
+以下のJSON形式のみで回答してください。説明やマークダウンは不要です:
+{
+  "main_name": "メイン料理名",
+  "main_desc": "メイン料理の簡単な説明（材料や調理のポイントを1-2文で）",
+  "side_name": "副菜名",
+  "side_desc": "副菜の簡単な説明（1文で）"
+}`;
+
+        try {
+            const resp = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 1.2 }
+                    })
+                }
+            );
+
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.error?.message || `API Error: ${resp.status}`);
+            }
+
+            const data = await resp.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+            // JSONを抽出
+            const match = text.match(/\{[\s\S]*\}/);
+            if (!match) throw new Error('献立を生成できませんでした。もう一度お試しください。');
+
+            const meal = JSON.parse(match[0]);
+
+            document.getElementById('mainName').textContent = meal.main_name;
+            document.getElementById('mainDesc').textContent = meal.main_desc;
+            document.getElementById('sideName').textContent = meal.side_name;
+            document.getElementById('sideDesc').textContent = meal.side_desc;
+
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('result').classList.add('show');
+        } catch (e) {
+            document.getElementById('loading').classList.remove('show');
+            showError(e.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorMsg');
+        el.textContent = msg;
+        el.classList.add('show');
+    }
+    function hideError() {
+        document.getElementById('errorMsg').classList.remove('show');
+    }
+
+    // Render
+    renderOptions(categories, 'categoryGrid', 'category');
+    renderOptions(moods, 'moodGrid', 'mood');
+    </script>
+</body>
+</html>
