@@ -579,10 +579,14 @@
         renderTags();
     }
 
+    function escapeHTML(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
     function renderTags() {
         const list = document.getElementById('tagList');
         list.innerHTML = ingredients.map((ing, i) =>
-            `<span class="tag">${ing}<span class="tag-remove" onclick="removeIngredient(${i})">×</span></span>`
+            `<span class="tag">${escapeHTML(ing)}<span class="tag-remove" onclick="removeIngredient(${i})">×</span></span>`
         ).join('');
     }
 
