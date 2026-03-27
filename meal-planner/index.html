@@ -351,6 +351,33 @@
             margin-bottom: 14px;
         }
 
+        /* Recipe links */
+        .recipe-links {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .recipe-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #fafaf9;
+            border: 1px solid #e7e5e4;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            color: #78716c;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .recipe-link:hover {
+            background: #fef3c7;
+            border-color: #fbbf24;
+            color: #92400e;
+        }
+        .recipe-link .link-icon { font-size: 0.85rem; }
+
         @media (max-width: 400px) {
             .option-grid { grid-template-columns: repeat(3, 1fr); }
             .header h1 { font-size: 1.3rem; }
@@ -443,12 +470,14 @@
                 <div class="meal-label">メインディッシュ</div>
                 <div class="meal-name" id="mainName"></div>
                 <div class="meal-desc" id="mainDesc"></div>
+                <div class="recipe-links" id="mainLinks"></div>
             </div>
             <hr class="meal-divider">
             <div class="meal-card">
                 <div class="meal-label">副菜</div>
                 <div class="meal-name" id="sideName"></div>
                 <div class="meal-desc" id="sideDesc"></div>
+                <div class="recipe-links" id="sideLinks"></div>
             </div>
             <div style="text-align:center">
                 <button class="retry-btn" id="retryBtn" onclick="retry()">🔄 もう一回考える</button>
@@ -577,6 +606,20 @@
         }
     })();
 
+    // Recipe search links
+    function buildRecipeLinks(dishName) {
+        const q = encodeURIComponent(dishName + ' レシピ');
+        const sites = [
+            { name: 'Google', icon: '🔍', url: `https://www.google.com/search?q=${q}` },
+            { name: 'クックパッド', icon: '📖', url: `https://cookpad.com/search/${encodeURIComponent(dishName)}` },
+            { name: 'クラシル', icon: '🎥', url: `https://www.kurashiru.com/search?query=${encodeURIComponent(dishName)}` },
+            { name: 'YouTube', icon: '▶️', url: `https://www.youtube.com/results?search_query=${q}` },
+        ];
+        return sites.map(s =>
+            `<a href="${s.url}" target="_blank" rel="noopener" class="recipe-link"><span class="link-icon">${s.icon}</span>${s.name}</a>`
+        ).join('');
+    }
+
     // Shared API call
     async function callGemini(prompt, btn) {
         const apiKey = getApiKey();
@@ -617,8 +660,10 @@
             const meal = JSON.parse(match[0]);
             document.getElementById('mainName').textContent = meal.main_name;
             document.getElementById('mainDesc').textContent = meal.main_desc;
+            document.getElementById('mainLinks').innerHTML = buildRecipeLinks(meal.main_name);
             document.getElementById('sideName').textContent = meal.side_name;
             document.getElementById('sideDesc').textContent = meal.side_desc;
+            document.getElementById('sideLinks').innerHTML = buildRecipeLinks(meal.side_name);
 
             document.getElementById('loading').classList.remove('show');
             document.getElementById('result').classList.add('show');
