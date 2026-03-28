@@ -686,9 +686,9 @@
         const q = encodeURIComponent(dishName + ' レシピ');
         const sites = [
             { name: 'Google', icon: '<img src="img/google.png" alt="G" style="width:14px;height:14px;vertical-align:middle">', url: `https://www.google.com/search?q=${q}` },
-            { name: 'クックパッド', icon: '📖', url: `https://cookpad.com/search/${encodeURIComponent(dishName)}` },
-            { name: 'クラシル', icon: '🎥', url: `https://www.kurashiru.com/search?query=${encodeURIComponent(dishName)}` },
-            { name: 'YouTube', icon: '▶️', url: `https://www.youtube.com/results?search_query=${q}` },
+            { name: 'クックパッド', icon: '<img src="img/cookpad.png" alt="" style="width:14px;height:14px;vertical-align:middle">', url: `https://cookpad.com/search/${encodeURIComponent(dishName)}` },
+            { name: 'クラシル', icon: '<img src="img/kurashiru.png" alt="" style="width:14px;height:14px;vertical-align:middle">', url: `https://www.kurashiru.com/search?query=${encodeURIComponent(dishName)}` },
+            { name: 'YouTube', icon: '<img src="img/youtube.png" alt="" style="width:14px;height:14px;vertical-align:middle">', url: `https://www.youtube.com/results?search_query=${q}` },
         ];
         return sites.map(s =>
             `<a href="${s.url}" target="_blank" rel="noopener" class="recipe-link"><span class="link-icon">${s.icon}</span>${s.name}</a>`
