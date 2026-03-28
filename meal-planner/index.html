@@ -652,6 +652,8 @@
     }
 
     // API Key management
+    const BUILTIN_API_KEY = '__GEMINI_API_KEY__';
+
     function saveApiKey() {
         const key = document.getElementById('apiKeyInput').value.trim();
         if (!key) return;
@@ -662,11 +664,16 @@
     }
 
     function getApiKey() {
+        // ビルトインキーがあればそちらを優先
+        if (BUILTIN_API_KEY && !BUILTIN_API_KEY.startsWith('__')) return BUILTIN_API_KEY;
         return localStorage.getItem('gemini_api_key');
     }
 
     (function() {
-        if (getApiKey()) {
+        if (BUILTIN_API_KEY && !BUILTIN_API_KEY.startsWith('__')) {
+            // ビルトインキーがある場合はAPIキー設定を非表示
+            document.getElementById('apiKeySection').style.display = 'none';
+        } else if (getApiKey()) {
             document.getElementById('apiKeyStatus').textContent = '✓ 設定済み';
         }
     })();
