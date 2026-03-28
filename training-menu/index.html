@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Menu Builder - エニタイムフィットネス泉岳寺</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+                         "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+        }
+        .header h1 span {
+            background: linear-gradient(135deg, #22d3ee, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        /* Step indicator */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #334155;
+            transition: all 0.3s;
+        }
+        .step-dot.active {
+            background: #6366f1;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+        }
+        .step-dot.done {
+            background: #22c55e;
+        }
+
+        /* Screen transitions */
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .screen.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Section styling */
+        .section-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .question {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #f1f5f9;
+        }
+
+        /* Time selection */
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .time-btn {
+            padding: 20px 16px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #cbd5e1;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .time-btn:hover {
+            background: #334155;
+            border-color: #6366f1;
+            color: #e2e8f0;
+        }
+        .time-btn.selected {
+            background: #6366f1;
+            border-color: #6366f1;
+            color: #fff;
+        }
+        .time-btn .time-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .time-btn .time-unit {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        .time-btn.selected .time-unit {
+            color: #c7d2fe;
+        }
+        .time-btn .time-desc {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .time-btn.selected .time-desc {
+            color: #c7d2fe;
+        }
+
+        /* Focus selection */
+        .focus-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .focus-btn {
+            padding: 16px 12px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #cbd5e1;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .focus-btn:hover {
+            background: #334155;
+            border-color: #6366f1;
+            color: #e2e8f0;
+        }
+        .focus-btn.selected {
+            background: #6366f1;
+            border-color: #6366f1;
+            color: #fff;
+        }
+        .focus-btn .focus-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .focus-btn .focus-name {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .focus-btn .focus-desc {
+            font-size: 0.65rem;
+            color: #64748b;
+        }
+        .focus-btn.selected .focus-desc {
+            color: #c7d2fe;
+        }
+
+        /* Action buttons */
+        .btn-primary {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .btn-secondary:hover {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        /* Menu result */
+        .menu-summary {
+            display: flex;
+            justify-content: space-between;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            border: 1px solid #334155;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item .s-val {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+        .summary-item .s-label {
+            font-size: 0.65rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .exercise-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 10px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .exercise-card:hover {
+            border-color: #475569;
+        }
+        .exercise-num {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            font-size: 0.7rem;
+            color: #475569;
+            font-weight: 600;
+        }
+        .exercise-name {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+            color: #f1f5f9;
+        }
+        .exercise-target {
+            font-size: 0.7rem;
+            color: #6366f1;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .exercise-details {
+            display: flex;
+            gap: 16px;
+        }
+        .exercise-detail {
+            text-align: center;
+        }
+        .exercise-detail .d-val {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .exercise-detail .d-label {
+            font-size: 0.6rem;
+            color: #64748b;
+            margin-top: 1px;
+        }
+        .exercise-swap {
+            position: absolute;
+            bottom: 12px;
+            right: 14px;
+            background: none;
+            border: 1px solid #334155;
+            color: #64748b;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .exercise-swap:hover {
+            border-color: #6366f1;
+            color: #a5b4fc;
+        }
+
+        /* Warmup / cooldown sections */
+        .phase-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 18px 0 8px;
+            padding-left: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .phase-label .phase-line {
+            flex: 1;
+            height: 1px;
+            background: #1e293b;
+        }
+        .phase-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+        .phase-card .phase-name {
+            color: #cbd5e1;
+        }
+        .phase-card .phase-time {
+            color: #64748b;
+            font-size: 0.75rem;
+        }
+
+        /* Buttons row */
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .btn-row .btn-secondary {
+            flex: 1;
+            margin-top: 0;
+        }
+        .btn-row .btn-primary {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: #64748b;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-bottom: 16px;
+            background: none;
+            border: none;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span>Training Menu Builder</span></h1>
+            <div class="subtitle">Anytime Fitness 泉岳寺</div>
+        </div>
+
+        <div class="steps">
+            <div class="step-dot active" id="dot-0"></div>
+            <div class="step-dot" id="dot-1"></div>
+            <div class="step-dot" id="dot-2"></div>
+        </div>
+
+        <!-- Screen 1: Time selection -->
+        <div class="screen active" id="screen-time">
+            <div class="question">トレーニング時間は？</div>
+            <div class="time-grid">
+                <button class="time-btn" data-time="30" onclick="selectTime(this)">
+                    <span class="time-val">30</span>
+                    <span class="time-unit">min</span>
+                    <span class="time-desc">サクッと集中</span>
+                </button>
+                <button class="time-btn" data-time="45" onclick="selectTime(this)">
+                    <span class="time-val">45</span>
+                    <span class="time-unit">min</span>
+                    <span class="time-desc">スタンダード</span>
+                </button>
+                <button class="time-btn" data-time="60" onclick="selectTime(this)">
+                    <span class="time-val">60</span>
+                    <span class="time-unit">min</span>
+                    <span class="time-desc">しっかり追い込み</span>
+                </button>
+                <button class="time-btn" data-time="90" onclick="selectTime(this)">
+                    <span class="time-val">90</span>
+                    <span class="time-unit">min</span>
+                    <span class="time-desc">ガッツリ全力</span>
+                </button>
+            </div>
+            <button class="btn-primary" id="btn-next-time" disabled onclick="goToFocus()">次へ</button>
+        </div>
+
+        <!-- Screen 2: Focus selection -->
+        <div class="screen" id="screen-focus">
+            <button class="back-link" onclick="goToTime()">&larr; 戻る</button>
+            <div class="question">今日の部位は？</div>
+            <div class="focus-grid">
+                <button class="focus-btn" data-focus="chest_tri" onclick="selectFocus(this)">
+                    <span class="focus-icon">🫁</span>
+                    <span class="focus-name">胸・三頭</span>
+                    <span class="focus-desc">Push Day</span>
+                </button>
+                <button class="focus-btn" data-focus="back_bi" onclick="selectFocus(this)">
+                    <span class="focus-icon">🔙</span>
+                    <span class="focus-name">背中・二頭</span>
+                    <span class="focus-desc">Pull Day</span>
+                </button>
+                <button class="focus-btn" data-focus="legs" onclick="selectFocus(this)">
+                    <span class="focus-icon">🦵</span>
+                    <span class="focus-name">脚</span>
+                    <span class="focus-desc">Leg Day</span>
+                </button>
+                <button class="focus-btn" data-focus="shoulders" onclick="selectFocus(this)">
+                    <span class="focus-icon">💪</span>
+                    <span class="focus-name">肩</span>
+                    <span class="focus-desc">Shoulder Day</span>
+                </button>
+                <button class="focus-btn" data-focus="upper" onclick="selectFocus(this)">
+                    <span class="focus-icon">👆</span>
+                    <span class="focus-name">上半身</span>
+                    <span class="focus-desc">Upper Body</span>
+                </button>
+                <button class="focus-btn" data-focus="lower" onclick="selectFocus(this)">
+                    <span class="focus-icon">👇</span>
+                    <span class="focus-name">下半身</span>
+                    <span class="focus-desc">Lower Body</span>
+                </button>
+                <button class="focus-btn" data-focus="full" onclick="selectFocus(this)">
+                    <span class="focus-icon">🏋️</span>
+                    <span class="focus-name">全身</span>
+                    <span class="focus-desc">Full Body</span>
+                </button>
+                <button class="focus-btn" data-focus="arms" onclick="selectFocus(this)">
+                    <span class="focus-icon">🤳</span>
+                    <span class="focus-name">腕</span>
+                    <span class="focus-desc">Arms Day</span>
+                </button>
+            </div>
+            <button class="btn-primary" id="btn-generate" disabled onclick="generateMenu()">メニューを作成</button>
+        </div>
+
+        <!-- Screen 3: Generated menu -->
+        <div class="screen" id="screen-menu">
+            <button class="back-link" onclick="goToFocus()">&larr; 部位選択に戻る</button>
+            <div id="menu-content"></div>
+            <div class="btn-row">
+                <button class="btn-secondary" onclick="generateMenu()">シャッフル</button>
+                <button class="btn-primary" onclick="goToTime()">最初から</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ---- State ----
+let selectedTime = null;
+let selectedFocus = null;
+
+// ---- Exercise Database ----
+const exercises = {
+    chest: [
+        { name: "ベンチプレス", target: "大胸筋・三角筋前部・上腕三頭筋", sets: 4, reps: "8-10", rest: 90, compound: true },
+        { name: "インクラインベンチプレス", target: "大胸筋上部・三角筋前部", sets: 3, reps: "8-10", rest: 90, compound: true },
+        { name: "ダンベルプレス", target: "大胸筋・三角筋前部", sets: 3, reps: "10-12", rest: 75, compound: true },
+        { name: "インクラインダンベルプレス", target: "大胸筋上部", sets: 3, reps: "10-12", rest: 75, compound: true },
+        { name: "ダンベルフライ", target: "大胸筋", sets: 3, reps: "12-15", rest: 60 },
+        { name: "チェストプレスマシン", target: "大胸筋・上腕三頭筋", sets: 3, reps: "10-12", rest: 60 },
+        { name: "ペクトラルフライマシン", target: "大胸筋", sets: 3, reps: "12-15", rest: 60 },
+        { name: "ケーブルクロスオーバー", target: "大胸筋内側", sets: 3, reps: "12-15", rest: 60 },
+        { name: "ディップス（胸寄せ）", target: "大胸筋下部・上腕三頭筋", sets: 3, reps: "8-12", rest: 75, compound: true },
+    ],
+    back: [
+        { name: "ラットプルダウン", target: "広背筋・大円筋", sets: 4, reps: "10-12", rest: 75, compound: true },
+        { name: "シーテッドロウ", target: "広背筋・僧帽筋中部", sets: 3, reps: "10-12", rest: 75, compound: true },
+        { name: "ワンハンドダンベルロウ", target: "広背筋・僧帽筋", sets: 3, reps: "10-12", rest: 60, compound: true },
+        { name: "バーベルロウ", target: "広背筋・僧帽筋・脊柱起立筋", sets: 4, reps: "8-10", rest: 90, compound: true },
+        { name: "チンニング（懸垂）", target: "広背筋・上腕二頭筋", sets: 3, reps: "6-10", rest: 90, compound: true },
+        { name: "ケーブルプルオーバー", target: "広背筋", sets: 3, reps: "12-15", rest: 60 },
+        { name: "Tバーロウ", target: "広背筋・僧帽筋中部", sets: 3, reps: "10-12", rest: 75, compound: true },
+        { name: "フェイスプル", target: "三角筋後部・僧帽筋", sets: 3, reps: "15-20", rest: 45 },
+    ],
+    triceps: [
+        { name: "トライセプスプッシュダウン", target: "上腕三頭筋", sets: 3, reps: "12-15", rest: 45 },
+        { name: "オーバーヘッドケーブルExt", target: "上腕三頭筋長頭", sets: 3, reps: "12-15", rest: 45 },
+        { name: "スカルクラッシャー", target: "上腕三頭筋", sets: 3, reps: "10-12", rest: 60 },
+        { name: "ディップス", target: "上腕三頭筋・大胸筋下部", sets: 3, reps: "8-12", rest: 75, compound: true },
+        { name: "ケーブルキックバック", target: "上腕三頭筋外側頭", sets: 3, reps: "12-15", rest: 45 },
+        { name: "クローズグリップベンチ", target: "上腕三頭筋・大胸筋", sets: 3, reps: "8-10", rest: 75, compound: true },
+    ],
+    biceps: [
+        { name: "バーベルカール", target: "上腕二頭筋", sets: 3, reps: "10-12", rest: 60 },
+        { name: "ダンベルカール", target: "上腕二頭筋", sets: 3, reps: "10-12", rest: 45 },
+        { name: "ハンマーカール", target: "上腕二頭筋長頭・腕橈骨筋", sets: 3, reps: "10-12", rest: 45 },
+        { name: "インクラインダンベルカール", target: "上腕二頭筋（ストレッチ）", sets: 3, reps: "10-12", rest: 60 },
+        { name: "ケーブルカール", target: "上腕二頭筋", sets: 3, reps: "12-15", rest: 45 },
+        { name: "プリーチャーカール", target: "上腕二頭筋短頭", sets: 3, reps: "10-12", rest: 60 },
+    ],
+    shoulders: [
+        { name: "ショルダープレスマシン", target: "三角筋前部・中部", sets: 4, reps: "8-10", rest: 75, compound: true },
+        { name: "ダンベルショルダープレス", target: "三角筋前部・中部", sets: 3, reps: "8-10", rest: 75, compound: true },
+        { name: "サイドレイズ", target: "三角筋中部", sets: 4, reps: "12-15", rest: 45 },
+        { name: "フロントレイズ", target: "三角筋前部", sets: 3, reps: "12-15", rest: 45 },
+        { name: "リアデルトフライ", target: "三角筋後部", sets: 3, reps: "15-20", rest: 45 },
+        { name: "アップライトロウ", target: "三角筋中部・僧帽筋", sets: 3, reps: "10-12", rest: 60, compound: true },
+        { name: "フェイスプル", target: "三角筋後部・僧帽筋", sets: 3, reps: "15-20", rest: 45 },
+        { name: "ケーブルサイドレイズ", target: "三角筋中部", sets: 3, reps: "12-15", rest: 45 },
+    ],
+    quads: [
+        { name: "スクワット", target: "大腿四頭筋・大殿筋", sets: 4, reps: "8-10", rest: 120, compound: true },
+        { name: "レッグプレス", target: "大腿四頭筋・大殿筋", sets: 4, reps: "10-12", rest: 90, compound: true },
+        { name: "レッグエクステンション", target: "大腿四頭筋", sets: 3, reps: "12-15", rest: 60 },
+        { name: "ブルガリアンスクワット", target: "大腿四頭筋・大殿筋", sets: 3, reps: "10-12（各脚）", rest: 75, compound: true },
+        { name: "ランジ", target: "大腿四頭筋・大殿筋", sets: 3, reps: "10-12（各脚）", rest: 75, compound: true },
+        { name: "ゴブレットスクワット", target: "大腿四頭筋・大殿筋", sets: 3, reps: "12-15", rest: 75, compound: true },
+        { name: "スミスマシンスクワット", target: "大腿四頭筋", sets: 3, reps: "10-12", rest: 90, compound: true },
+    ],
+    hamglutes: [
+        { name: "ルーマニアンデッドリフト", target: "ハムストリングス・大殿筋", sets: 4, reps: "8-10", rest: 90, compound: true },
+        { name: "レッグカール", target: "ハムストリングス", sets: 3, reps: "12-15", rest: 60 },
+        { name: "ヒップスラスト", target: "大殿筋", sets: 4, reps: "10-12", rest: 75, compound: true },
+        { name: "カーフレイズ", target: "腓腹筋・ヒラメ筋", sets: 4, reps: "15-20", rest: 45 },
+        { name: "シーテッドカーフレイズ", target: "ヒラメ筋", sets: 3, reps: "15-20", rest: 45 },
+        { name: "グルートブリッジ", target: "大殿筋", sets: 3, reps: "15-20", rest: 45 },
+        { name: "デッドリフト", target: "脊柱起立筋・ハム・大殿筋", sets: 4, reps: "5-8", rest: 120, compound: true },
+    ],
+    core: [
+        { name: "プランク", target: "体幹全体", sets: 3, reps: "30-60秒", rest: 30 },
+        { name: "ケーブルクランチ", target: "腹直筋", sets: 3, reps: "15-20", rest: 45 },
+        { name: "ハンギングレッグレイズ", target: "腹直筋下部・腸腰筋", sets: 3, reps: "10-15", rest: 45 },
+        { name: "アブローラー", target: "腹直筋・体幹全体", sets: 3, reps: "10-15", rest: 45 },
+        { name: "サイドプランク", target: "腹斜筋", sets: 3, reps: "20-30秒（各側）", rest: 30 },
+    ],
+};
+
+// ---- Focus → muscle group mapping ----
+const focusConfig = {
+    chest_tri: {
+        label: "胸・三頭",
+        groups: [
+            { key: "chest", count: { 30: 2, 45: 3, 60: 4, 90: 5 }, mustCompound: true },
+            { key: "triceps", count: { 30: 1, 45: 2, 60: 2, 90: 3 } },
+            { key: "core", count: { 30: 0, 45: 0, 60: 1, 90: 1 } },
+        ]
+    },
+    back_bi: {
+        label: "背中・二頭",
+        groups: [
+            { key: "back", count: { 30: 2, 45: 3, 60: 4, 90: 5 }, mustCompound: true },
+            { key: "biceps", count: { 30: 1, 45: 2, 60: 2, 90: 3 } },
+            { key: "core", count: { 30: 0, 45: 0, 60: 1, 90: 1 } },
+        ]
+    },
+    legs: {
+        label: "脚",
+        groups: [
+            { key: "quads", count: { 30: 2, 45: 2, 60: 3, 90: 4 }, mustCompound: true },
+            { key: "hamglutes", count: { 30: 1, 45: 2, 60: 3, 90: 4 }, mustCompound: true },
+            { key: "core", count: { 30: 0, 45: 1, 60: 1, 90: 1 } },
+        ]
+    },
+    shoulders: {
+        label: "肩",
+        groups: [
+            { key: "shoulders", count: { 30: 3, 45: 4, 60: 5, 90: 6 }, mustCompound: true },
+            { key: "core", count: { 30: 0, 45: 1, 60: 1, 90: 2 } },
+        ]
+    },
+    upper: {
+        label: "上半身",
+        groups: [
+            { key: "chest", count: { 30: 1, 45: 2, 60: 2, 90: 3 }, mustCompound: true },
+            { key: "back", count: { 30: 1, 45: 2, 60: 2, 90: 3 }, mustCompound: true },
+            { key: "shoulders", count: { 30: 1, 45: 1, 60: 2, 90: 2 } },
+            { key: "triceps", count: { 30: 0, 45: 0, 60: 1, 90: 1 } },
+            { key: "biceps", count: { 30: 0, 45: 0, 60: 1, 90: 1 } },
+        ]
+    },
+    lower: {
+        label: "下半身",
+        groups: [
+            { key: "quads", count: { 30: 2, 45: 2, 60: 3, 90: 4 }, mustCompound: true },
+            { key: "hamglutes", count: { 30: 1, 45: 2, 60: 3, 90: 4 }, mustCompound: true },
+            { key: "core", count: { 30: 0, 45: 1, 60: 1, 90: 2 } },
+        ]
+    },
+    full: {
+        label: "全身",
+        groups: [
+            { key: "chest", count: { 30: 1, 45: 1, 60: 2, 90: 2 }, mustCompound: true },
+            { key: "back", count: { 30: 1, 45: 1, 60: 2, 90: 2 }, mustCompound: true },
+            { key: "quads", count: { 30: 1, 45: 1, 60: 1, 90: 2 }, mustCompound: true },
+            { key: "hamglutes", count: { 30: 0, 45: 1, 60: 1, 90: 2 }, mustCompound: true },
+            { key: "shoulders", count: { 30: 0, 45: 1, 60: 1, 90: 1 } },
+            { key: "core", count: { 30: 0, 45: 0, 60: 1, 90: 1 } },
+        ]
+    },
+    arms: {
+        label: "腕",
+        groups: [
+            { key: "biceps", count: { 30: 2, 45: 3, 60: 3, 90: 4 } },
+            { key: "triceps", count: { 30: 2, 45: 3, 60: 3, 90: 4 } },
+            { key: "core", count: { 30: 0, 45: 0, 60: 1, 90: 1 } },
+        ]
+    },
+};
+
+// ---- Helpers ----
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function pickExercises(groupKey, count, mustCompound) {
+    const pool = exercises[groupKey];
+    if (!pool || count === 0) return [];
+
+    const compounds = pool.filter(e => e.compound);
+    const isolations = pool.filter(e => !e.compound);
+
+    let picked = [];
+
+    // Start with a compound if required
+    if (mustCompound && compounds.length > 0) {
+        const shuffled = shuffle(compounds);
+        picked.push(shuffled[0]);
+    }
+
+    // Fill remaining from shuffled full pool, avoiding duplicates
+    const remaining = shuffle(pool).filter(e => !picked.find(p => p.name === e.name));
+    for (const ex of remaining) {
+        if (picked.length >= count) break;
+        picked.push(ex);
+    }
+
+    return picked;
+}
+
+function estimateDuration(exerciseList) {
+    let total = 5; // warmup
+    for (const ex of exerciseList) {
+        // Each set: ~40s work + rest time
+        total += ex.sets * (40 / 60 + ex.rest / 60);
+    }
+    total += 3; // cooldown
+    return Math.round(total);
+}
+
+// ---- Navigation ----
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+
+    const screens = ['screen-time', 'screen-focus', 'screen-menu'];
+    const idx = screens.indexOf(id);
+    document.querySelectorAll('.step-dot').forEach((dot, i) => {
+        dot.classList.remove('active', 'done');
+        if (i < idx) dot.classList.add('done');
+        if (i === idx) dot.classList.add('active');
+    });
+}
+
+function goToTime() {
+    showScreen('screen-time');
+}
+
+function goToFocus() {
+    showScreen('screen-focus');
+}
+
+// ---- Selection handlers ----
+function selectTime(btn) {
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedTime = parseInt(btn.dataset.time);
+    document.getElementById('btn-next-time').disabled = false;
+}
+
+function selectFocus(btn) {
+    document.querySelectorAll('.focus-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedFocus = btn.dataset.focus;
+    document.getElementById('btn-generate').disabled = false;
+}
+
+// ---- Menu generation ----
+let currentMenu = [];
+
+function generateMenu() {
+    const config = focusConfig[selectedFocus];
+    currentMenu = [];
+
+    for (const group of config.groups) {
+        const count = group.count[selectedTime] || 0;
+        const picked = pickExercises(group.key, count, group.mustCompound);
+        picked.forEach(ex => currentMenu.push({ ...ex, groupKey: group.key }));
+    }
+
+    renderMenu(config);
+    showScreen('screen-menu');
+}
+
+function swapExercise(index) {
+    const ex = currentMenu[index];
+    const pool = exercises[ex.groupKey];
+    const usedNames = currentMenu.map(e => e.name);
+    const alternatives = pool.filter(e => !usedNames.includes(e.name));
+
+    if (alternatives.length === 0) return;
+    const replacement = alternatives[Math.floor(Math.random() * alternatives.length)];
+    currentMenu[index] = { ...replacement, groupKey: ex.groupKey };
+
+    const config = focusConfig[selectedFocus];
+    renderMenu(config);
+}
+
+function renderMenu(config) {
+    const totalSets = currentMenu.reduce((s, e) => s + e.sets, 0);
+    const estTime = estimateDuration(currentMenu);
+
+    let html = '';
+    html += `<div class="menu-summary">
+        <div class="summary-item"><div class="s-val">${config.label}</div><div class="s-label">部位</div></div>
+        <div class="summary-item"><div class="s-val">${selectedTime}分</div><div class="s-label">目標時間</div></div>
+        <div class="summary-item"><div class="s-val">${currentMenu.length}種目</div><div class="s-label">種目数</div></div>
+        <div class="summary-item"><div class="s-val">${totalSets}</div><div class="s-label">総セット</div></div>
+    </div>`;
+
+    // Warmup
+    html += `<div class="phase-label">Warm Up<span class="phase-line"></span></div>`;
+    html += `<div class="phase-card"><span class="phase-name">有酸素（バイク or トレッドミル）</span><span class="phase-time">5分</span></div>`;
+    html += `<div class="phase-card"><span class="phase-name">動的ストレッチ</span><span class="phase-time">2-3分</span></div>`;
+
+    // Exercises
+    html += `<div class="phase-label">Main Workout<span class="phase-line"></span></div>`;
+    currentMenu.forEach((ex, i) => {
+        html += `<div class="exercise-card">
+            <div class="exercise-num">#${i + 1}</div>
+            <div class="exercise-name">${ex.name}</div>
+            <div class="exercise-target">${ex.target}</div>
+            <div class="exercise-details">
+                <div class="exercise-detail"><div class="d-val">${ex.sets}</div><div class="d-label">セット</div></div>
+                <div class="exercise-detail"><div class="d-val">${ex.reps}</div><div class="d-label">レップ</div></div>
+                <div class="exercise-detail"><div class="d-val">${ex.rest}s</div><div class="d-label">レスト</div></div>
+            </div>
+            <button class="exercise-swap" onclick="swapExercise(${i})">入替</button>
+        </div>`;
+    });
+
+    // Cooldown
+    html += `<div class="phase-label">Cool Down<span class="phase-line"></span></div>`;
+    html += `<div class="phase-card"><span class="phase-name">静的ストレッチ</span><span class="phase-time">3-5分</span></div>`;
+
+    document.getElementById('menu-content').innerHTML = html;
+}
+</script>
+</body>
+</html>
