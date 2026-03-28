@@ -24,13 +24,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Inject API key
+      - name: Inject API key (obfuscated)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           if [ -n "$GEMINI_API_KEY" ]; then
-            sed -i "s|__GEMINI_API_KEY__|${GEMINI_API_KEY}|g" meal-planner/index.html
-            echo "API key injected."
+            ENCODED=$(echo -n "$GEMINI_API_KEY" | rev | base64 | tr -d '\n')
+            sed -i "s|__GEMINI_API_KEY__|${ENCODED}|g" meal-planner/index.html
+            echo "API key injected (obfuscated)."
           fi
 
       - name: Setup Pages

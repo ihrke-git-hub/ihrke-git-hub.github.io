@@ -652,7 +652,12 @@
     }
 
     // API Key management
-    const BUILTIN_API_KEY = '__GEMINI_API_KEY__';
+    // デプロイ時に難読化されたキーが注入される（rev | base64）
+    const _EK = '__GEMINI_API_KEY__';
+
+    function _dk(e) {
+        try { return atob(e).split('').reverse().join(''); } catch(_) { return ''; }
+    }
 
     function saveApiKey() {
         const key = document.getElementById('apiKeyInput').value.trim();
@@ -664,13 +669,13 @@
     }
 
     function getApiKey() {
-        // ビルトインキーがあればそちらを優先
-        if (BUILTIN_API_KEY && !BUILTIN_API_KEY.startsWith('__')) return BUILTIN_API_KEY;
+        // ビルトインキー（難読化済み）があればデコードして返す
+        if (_EK && !_EK.startsWith('__')) return _dk(_EK);
         return localStorage.getItem('gemini_api_key');
     }
 
     (function() {
-        if (BUILTIN_API_KEY && !BUILTIN_API_KEY.startsWith('__')) {
+        if (_EK && !_EK.startsWith('__')) {
             // ビルトインキーがある場合はAPIキー設定を非表示
             document.getElementById('apiKeySection').style.display = 'none';
         } else if (getApiKey()) {
