@@ -24,14 +24,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Inject API key (obfuscated)
+      - name: Inject Worker URL
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          WORKER_URL: ${{ secrets.WORKER_URL }}
         run: |
-          if [ -n "$GEMINI_API_KEY" ]; then
-            ENCODED=$(echo -n "$GEMINI_API_KEY" | rev | base64 | tr -d '\n')
-            sed -i "s|__GEMINI_API_KEY__|${ENCODED}|g" meal-planner/index.html
-            echo "API key injected (obfuscated)."
+          if [ -n "$WORKER_URL" ]; then
+            sed -i "s|__WORKER_URL__|${WORKER_URL}|g" meal-planner/index.html
+            echo "Worker URL injected."
           fi
 
       - name: Setup Pages

@@ -651,13 +651,9 @@
         ).join('');
     }
 
-    // API Key management
-    // デプロイ時に難読化されたキーが注入される（rev | base64）
-    const _EK = '__GEMINI_API_KEY__';
-
-    function _dk(e) {
-        try { return atob(e).split('').reverse().join(''); } catch(_) { return ''; }
-    }
+    // API configuration
+    // デプロイ時にWorker URLが注入される
+    const PROXY_URL = '__WORKER_URL__';
 
     function saveApiKey() {
         const key = document.getElementById('apiKeyInput').value.trim();
@@ -669,14 +665,16 @@
     }
 
     function getApiKey() {
-        // ビルトインキー（難読化済み）があればデコードして返す
-        if (_EK && !_EK.startsWith('__')) return _dk(_EK);
         return localStorage.getItem('gemini_api_key');
     }
 
+    function useProxy() {
+        return PROXY_URL && !PROXY_URL.startsWith('__');
+    }
+
     (function() {
-        if (_EK && !_EK.startsWith('__')) {
-            // ビルトインキーがある場合はAPIキー設定を非表示
+        if (useProxy()) {
+            // プロキシ経由の場合はAPIキー設定を非表示
             document.getElementById('apiKeySection').style.display = 'none';
         } else if (getApiKey()) {
             document.getElementById('apiKeyStatus').textContent = '✓ 設定済み';
@@ -708,11 +706,13 @@
 
     // Shared Gemini API call (returns parsed JSON array)
     async function callGemini(prompt, btn) {
-        const apiKey = getApiKey();
-        if (!apiKey) {
-            document.getElementById('apiKeySection').open = true;
-            showError('APIキーを設定してください（Google AI Studioで無料取得できます）');
-            return null;
+        if (!useProxy()) {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                document.getElementById('apiKeySection').open = true;
+                showError('APIキーを設定してください（Google AI Studioで無料取得できます）');
+                return null;
+            }
         }
 
         btn.disabled = true;
@@ -720,18 +720,31 @@
         hideAllSteps();
         document.getElementById('loading').classList.add('show');
 
+        const reqBody = {
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 1.2 }
+        };
+
         try {
-            const resp = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-                {
+            let resp;
+            if (useProxy()) {
+                // Cloudflare Worker プロキシ経由（APIキー不要）
+                resp = await fetch(PROXY_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 1.2 }
-                    })
-                }
-            );
+                    body: JSON.stringify(reqBody)
+                });
+            } else {
+                // 直接API呼び出し（フォールバック）
+                resp = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${getApiKey()}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(reqBody)
+                    }
+                );
+            }
 
             if (!resp.ok) {
                 const err = await resp.json().catch(() => ({}));
